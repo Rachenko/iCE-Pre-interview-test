@@ -1,0 +1,6 @@
+bin/
+obj/
+backups/
+logs/
+*.log.gz
+.vs/

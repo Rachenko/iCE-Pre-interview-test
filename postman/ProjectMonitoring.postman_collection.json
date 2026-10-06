@@ -1,0 +1,55 @@
+{
+  "info": {
+    "name": "Project Monitoring API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "base", "value": "http://localhost:8080" }],
+  "item": [
+    {
+      "name": "Users",
+      "item": [
+        { "name": "List users", "request": { "method": "GET", "url": "{{base}}/api/users" } },
+        { "name": "Get user", "request": { "method": "GET", "url": "{{base}}/api/users/1" } },
+        { "name": "Create user", "request": { "method": "POST", "url": "{{base}}/api/users",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": { "mode": "raw", "raw": "{\"username\":\"newbie\",\"email\":\"newbie@example.com\",\"fullName\":\"New Bie\",\"department\":\"Engineering\"}" } } },
+        { "name": "Update user", "request": { "method": "PUT", "url": "{{base}}/api/users/1",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": { "mode": "raw", "raw": "{\"email\":\"anong@example.com\",\"fullName\":\"Anong S.\",\"department\":\"Engineering\"}" } } },
+        { "name": "Delete user", "request": { "method": "DELETE", "url": "{{base}}/api/users/99" } }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        { "name": "List projects", "request": { "method": "GET", "url": "{{base}}/api/projects" } },
+        { "name": "Create project", "request": { "method": "POST", "url": "{{base}}/api/projects",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": { "mode": "raw", "raw": "{\"name\":\"Interview Demo\",\"description\":\"Created from Postman\",\"ownerId\":1,\"startDate\":\"2026-10-06\",\"endDate\":null}" } } }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        { "name": "List tasks", "request": { "method": "GET", "url": "{{base}}/api/tasks" } },
+        { "name": "Tasks by project+status", "request": { "method": "GET", "url": "{{base}}/api/tasks?projectId=1&status=todo" } },
+        { "name": "Create task", "request": { "method": "POST", "url": "{{base}}/api/tasks",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": { "mode": "raw", "raw": "{\"projectId\":1,\"title\":\"Write interview notes\",\"priority\":\"medium\",\"assigneeId\":1,\"dueDate\":\"2026-10-20\"}" } } },
+        { "name": "Update task", "request": { "method": "PUT", "url": "{{base}}/api/tasks/1",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": { "mode": "raw", "raw": "{\"title\":\"Design new landing page\",\"status\":\"done\",\"priority\":\"high\",\"assigneeId\":1,\"dueDate\":\"2026-03-01\"}" } } }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        { "name": "Department progress (JSON)", "request": { "method": "GET", "url": "{{base}}/api/reports/department-progress" } },
+        { "name": "Project summary (JSON)", "request": { "method": "GET", "url": "{{base}}/api/reports/project-summary" } },
+        { "name": "Department progress (CSV)", "request": { "method": "GET", "url": "{{base}}/api/reports/department-progress.csv" } },
+        { "name": "Project summary (CSV)", "request": { "method": "GET", "url": "{{base}}/api/reports/project-summary.csv" } }
+      ]
+    },
+    { "name": "Health", "request": { "method": "GET", "url": "{{base}}/health" } }
+  ]
+}
