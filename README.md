@@ -47,5 +47,10 @@ bash scripts/log-rotate.sh      # บีบอัดไฟล์ log ที่�
 ```
 
 บน Windows ใช้ชื่อเดียวกันนามสกุล `.ps1` เช่น `./scripts/healthcheck.ps1`
+ถ้า PowerShell บล็อกไม่ให้รัน script ให้เรียกผ่าน:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ./scripts/healthcheck.ps1
+```
 
 ถ้าอยากให้ backup อัตโนมัติทุกวัน ตั้ง cron ได้ เช่น `0 2 * * * /path/to/scripts/backup.sh`
