@@ -7,26 +7,21 @@ API สำหรับจัดการข้อมูลโครงการ�
 - ติดตั้ง [Docker Desktop](https://www.docker.com/products/docker-desktop/) (รวม Docker Compose มาให้แล้ว)
 - แค่นี้พอ ไม่ต้องลง .NET หรือ PostgreSQL เอง เพราะทุกอย่างรันใน container
 
-## วิธีติดตั้งและรัน
+## Quick Start (รันทั้งระบบด้วยคำสั่งเดียว)
 
 ```bash
-# 1. clone โปรเจกต์
 git clone https://github.com/Rachenko/iCE-Pre-interview-test.git
 cd iCE-Pre-interview-test
-
-# 2. รันคำสั่งเดียว จบ
 docker compose up --build -d
 ```
 
-คำสั่งนี้จะ build API และ start PostgreSQL ให้อัตโนมัติ รอบแรกอาจใช้เวลาสัก 1–2 นาที
+`docker compose up --build -d` คำสั่งเดียวรันทั้งหมด: build API, start PostgreSQL, สร้างตารางและ seed ข้อมูลตัวอย่าง — ไม่ต้องสั่งอะไรเพิ่ม รอบแรกอาจใช้เวลาสัก 1–2 นาที
 
 รันเสร็จแล้วเปิดดูได้เลย:
 
 - Swagger UI (หน้าทดลองยิง API): http://localhost:8080/swagger
 - Health check: http://localhost:8080/health
 - PostgreSQL: `localhost:5432` — ชื่อ db `monitoring`, user `postgres`, รหัส `postgres`
-
-ครั้งแรกที่รัน ฐานข้อมูลจะสร้างตารางและใส่ข้อมูลตัวอย่างให้อัตโนมัติจากไฟล์ `db/init.sql` — ไม่ต้องทำอะไรเพิ่ม
 
 ถ้าไม่ถนัดยิง API ผ่าน command line ในโฟลเดอร์ `postman/` มี Postman collection ครบทุก endpoint ให้ import ไปใช้ได้เลย
 
