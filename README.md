@@ -37,7 +37,7 @@ docker compose up --build -d    # แก้โค้ดแล้วอยาก�
 
 ## Scripts เสริม
 
-ในโฟลเดอร์ `scripts/` มี script สำหรับดูแลระบบ มี 2 เวอร์ชัน: `.sh` สำหรับ Linux/Git Bash และ `.ps1` สำหรับ PowerShell บน Windows:
+ในโฟลเดอร์ `scripts/` มี script สำหรับดูแลระบบ มี 2 เวอร์ชัน: `.sh` สำหรับ Mac/Linux และ `.ps1` สำหรับ PowerShell บน Windows:
 
 ```bash
 bash scripts/backup.sh          # สำรอง DB เป็นไฟล์ .sql.gz ลงโฟลเดอร์ backups/ (เก็บ 14 ไฟล์ล่าสุด)

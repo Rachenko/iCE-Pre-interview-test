@@ -13,7 +13,7 @@ mkdir -p "$LOG_DIR"
 rotated=0
 for f in "$LOG_DIR"/*.log; do
   [ -e "$f" ] || continue
-  size_kb=$(( $(stat -c%s "$f") / 1024 ))
+  size_kb=$(( $(wc -c < "$f") / 1024 ))
   if [ "$size_kb" -ge "$MAX_KB" ]; then
     gzip -c "$f" > "${f%.log}_${STAMP}.log.gz"
     : > "$f"   # truncate the live log file
