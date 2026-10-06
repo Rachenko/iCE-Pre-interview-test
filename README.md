@@ -35,6 +35,14 @@ docker compose down -v          # หยุดและลบข้อมูล�
 docker compose up --build -d    # แก้โค้ดแล้วอยากรันใหม่
 ```
 
+## รัน Unit Tests
+
+```bash
+dotnet test tests/ProjectMonitoring.Tests
+```
+
+(ต้องมี .NET 10 SDK หรือรันผ่าน container เช่น `docker run --rm -v .:/src -w /src mcr.microsoft.com/dotnet/sdk:10.0 dotnet test`)
+
 ## Scripts เสริม
 
 ในโฟลเดอร์ `scripts/` มี script สำหรับดูแลระบบ มี 2 เวอร์ชัน: `.sh` สำหรับ Mac/Linux และ `.ps1` สำหรับ PowerShell บน Windows:
