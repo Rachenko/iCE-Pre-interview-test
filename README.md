@@ -1,6 +1,6 @@
 # Project Monitoring API
 
-API สำหรับจัดการข้อมูลโครงการ พร้อมรายงานสรุปผล เขียนด้วย .NET 10 (Clean Architecture) ใช้ PostgreSQL เป็นฐานข้อมูล รันทั้งระบบด้วย Docker คำสั่งเดียว
+API สำหรับจัดการข้อมูลโครงการพร้อมรายงานสรุปผล เขียนด้วย .NET 10 + PostgreSQL รันทั้งระบบด้วย Docker คำสั่งเดียว
 
 ## สิ่งที่ต้องมีก่อนรัน
 
@@ -28,6 +28,8 @@ docker compose up --build -d
 
 ครั้งแรกที่รัน ฐานข้อมูลจะสร้างตารางและใส่ข้อมูลตัวอย่างให้อัตโนมัติจากไฟล์ `db/init.sql` — ไม่ต้องทำอะไรเพิ่ม
 
+ถ้าไม่ถนัดยิง API ผ่าน command line ในโฟลเดอร์ `postman/` มี Postman collection ครบทุก endpoint ให้ import ไปใช้ได้เลย
+
 ## คำสั่งที่ใช้บ่อย
 
 ```bash
@@ -37,61 +39,6 @@ docker compose down             # หยุดทั้งระบบ
 docker compose down -v          # หยุดและลบข้อมูลใน DB ทิ้ง (รีเซ็ตใหม่หมด)
 docker compose up --build -d    # แก้โค้ดแล้วอยากรันใหม่
 ```
-
-## ลองเรียก API
-
-```bash
-# ดึงรายชื่อผู้ใช้
-curl localhost:8080/api/users
-
-# รายงาน % ความคืบหน้าแยกตามแผนก
-curl localhost:8080/api/reports/department-progress
-
-# ดาวน์โหลดรายงานเป็น CSV
-curl -OJ localhost:8080/api/reports/project-summary.csv
-
-# สร้างงานใหม่
-curl -X POST localhost:8080/api/tasks -H 'Content-Type: application/json' \
-     -d '{"projectId":1,"title":"New task","priority":"high","assigneeId":1}'
-```
-
-ถ้าไม่ถนัด curl ในโฟลเดอร์ `postman/` มี Postman collection ครบทุก endpoint ให้ import ไปใช้ได้เลย
-
-## API มีอะไรบ้าง
-
-| Method | Path | คำอธิบาย |
-|---|---|---|
-| GET/POST/PUT/DELETE | `/api/users` `/api/users/{id}` | จัดการผู้ใช้ |
-| GET/POST/PUT/DELETE | `/api/projects` `/api/projects/{id}` | จัดการโครงการ |
-| GET/POST/PUT/DELETE | `/api/tasks` `/api/tasks/{id}` | จัดการงาน (filter ได้ด้วย `?projectId=&status=`) |
-| GET | `/api/reports/department-progress` | % ความคืบหน้าแยกตามแผนก |
-| GET | `/api/reports/project-summary` | สรุปทุกโครงการ + วันครบกำหนดที่ใกล้สุด |
-| GET | `/api/reports/*.csv` | รายงานเดียวกันแบบ export CSV |
-| GET | `/health` | เช็คสุขภาพ API + DB |
-
-## โครงสร้างโปรเจกต์
-
-```
-src/
-  Domain/          # Entities (User, Project, Task, SystemLog)
-  Application/     # DTOs + interface ของ repository
-  Infrastructure/  # DbContext (EF Core) + implement repository
-  Api/             # Controllers + Program.cs
-db/init.sql        # สร้างตาราง + ข้อมูลตัวอย่าง (รันครั้งแรกอัตโนมัติ)
-scripts/           # script ช่วยงาน: backup, healthcheck, stats, log-rotate
-postman/           # Postman collection
-Dockerfile         # build API เป็น image
-docker-compose.yml # รัน api + db พร้อมกัน
-```
-
-## ฐานข้อมูล
-
-| Table | เก็บอะไร | เชื่อมกับใคร |
-|---|---|---|
-| `users` | ผู้ใช้ + แผนก | เจ้าของ project / คนรับงาน |
-| `projects` | โครงการ | `owner_id → users.id` |
-| `tasks` | งานย่อยในโครงการ | `project_id → projects.id`, `assignee_id → users.id` |
-| `system_logs` | log ของระบบ | ไม่มี FK (เก็บแบบ append-only) |
 
 ## Scripts เสริม
 
