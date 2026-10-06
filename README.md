@@ -75,7 +75,7 @@ curl -X POST localhost:8080/api/tasks -H 'Content-Type: application/json' \
 src/
   Domain/          # Entities (User, Project, Task, SystemLog)
   Application/     # DTOs + interface ของ repository
-  Infrastructure/  # implement repository ด้วย Dapper/Npgsql
+  Infrastructure/  # DbContext (EF Core) + implement repository
   Api/             # Controllers + Program.cs
 db/init.sql        # สร้างตาราง + ข้อมูลตัวอย่าง (รันครั้งแรกอัตโนมัติ)
 scripts/           # script ช่วยงาน: backup, healthcheck, stats, log-rotate

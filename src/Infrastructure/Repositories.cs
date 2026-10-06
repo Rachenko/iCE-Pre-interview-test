@@ -1,182 +1,202 @@
-using Dapper;
-using Npgsql;
+using Microsoft.EntityFrameworkCore;
 using ProjectMonitoring.Application;
 using ProjectMonitoring.Domain;
 
 namespace ProjectMonitoring.Infrastructure;
 
-public sealed class UserRepository(NpgsqlDataSource db) : IUserRepository
+public sealed class UserRepository(MonitoringDbContext db) : IUserRepository
 {
-    public async Task<IReadOnlyList<User>> GetAllAsync(CancellationToken ct = default)
-    {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        var rows = await conn.QueryAsync<User>(
-            "SELECT id, username, email, full_name AS FullName, department, created_at AS CreatedAt FROM users ORDER BY id");
-        return rows.AsList();
-    }
+    public async Task<IReadOnlyList<User>> GetAllAsync(CancellationToken ct = default) =>
+        await db.Users.AsNoTracking().OrderBy(u => u.Id).ToListAsync(ct);
 
-    public async Task<User?> GetByIdAsync(int id, CancellationToken ct = default)
-    {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.QuerySingleOrDefaultAsync<User>(
-            "SELECT id, username, email, full_name AS FullName, department, created_at AS CreatedAt FROM users WHERE id = @id",
-            new { id });
-    }
+    public async Task<User?> GetByIdAsync(int id, CancellationToken ct = default) =>
+        await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, ct);
 
     public async Task<int> CreateAsync(CreateUserRequest req, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.ExecuteScalarAsync<int>(
-            "INSERT INTO users (username, email, full_name, department) VALUES (@Username, @Email, @FullName, @Department) RETURNING id",
-            req);
+        var user = new User
+        {
+            Username = req.Username,
+            Email = req.Email,
+            FullName = req.FullName,
+            Department = req.Department,
+        };
+        db.Users.Add(user);
+        await db.SaveChangesAsync(ct);
+        return user.Id;
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateUserRequest req, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        var n = await conn.ExecuteAsync(
-            "UPDATE users SET email = @Email, full_name = @FullName, department = @Department WHERE id = @id",
-            new { id, req.Email, req.FullName, req.Department });
-        return n > 0;
+        var user = await db.Users.FindAsync([id], ct);
+        if (user is null) return false;
+        user.Email = req.Email;
+        user.FullName = req.FullName;
+        user.Department = req.Department;
+        return await db.SaveChangesAsync(ct) > 0;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.ExecuteAsync("DELETE FROM users WHERE id = @id", new { id }) > 0;
+        var user = await db.Users.FindAsync([id], ct);
+        if (user is null) return false;
+        db.Users.Remove(user);
+        return await db.SaveChangesAsync(ct) > 0;
     }
 }
 
-public sealed class ProjectRepository(NpgsqlDataSource db) : IProjectRepository
+public sealed class ProjectRepository(MonitoringDbContext db) : IProjectRepository
 {
-    private const string Select =
-        "SELECT id, name, description, status, owner_id AS OwnerId, start_date AS StartDate, end_date AS EndDate, created_at AS CreatedAt FROM projects";
+    public async Task<IReadOnlyList<Project>> GetAllAsync(CancellationToken ct = default) =>
+        await db.Projects.AsNoTracking().OrderBy(p => p.Id).ToListAsync(ct);
 
-    public async Task<IReadOnlyList<Project>> GetAllAsync(CancellationToken ct = default)
-    {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return (await conn.QueryAsync<Project>(Select + " ORDER BY id")).AsList();
-    }
-
-    public async Task<Project?> GetByIdAsync(int id, CancellationToken ct = default)
-    {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.QuerySingleOrDefaultAsync<Project>(Select + " WHERE id = @id", new { id });
-    }
+    public async Task<Project?> GetByIdAsync(int id, CancellationToken ct = default) =>
+        await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct);
 
     public async Task<int> CreateAsync(CreateProjectRequest req, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.ExecuteScalarAsync<int>(
-            "INSERT INTO projects (name, description, owner_id, start_date, end_date) VALUES (@Name, @Description, @OwnerId, @StartDate, @EndDate) RETURNING id",
-            req);
+        var project = new Project
+        {
+            Name = req.Name,
+            Description = req.Description,
+            OwnerId = req.OwnerId,
+            StartDate = req.StartDate,
+            EndDate = req.EndDate,
+        };
+        db.Projects.Add(project);
+        await db.SaveChangesAsync(ct);
+        return project.Id;
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateProjectRequest req, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        var n = await conn.ExecuteAsync(
-            "UPDATE projects SET name = @Name, description = @Description, status = @Status, end_date = @EndDate WHERE id = @id",
-            new { id, req.Name, req.Description, req.Status, req.EndDate });
-        return n > 0;
+        var project = await db.Projects.FindAsync([id], ct);
+        if (project is null) return false;
+        project.Name = req.Name;
+        project.Description = req.Description;
+        project.Status = req.Status;
+        project.EndDate = req.EndDate;
+        return await db.SaveChangesAsync(ct) > 0;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.ExecuteAsync("DELETE FROM projects WHERE id = @id", new { id }) > 0;
+        var project = await db.Projects.FindAsync([id], ct);
+        if (project is null) return false;
+        db.Projects.Remove(project);
+        return await db.SaveChangesAsync(ct) > 0;
     }
 }
 
-public sealed class TaskRepository(NpgsqlDataSource db) : ITaskRepository
+public sealed class TaskRepository(MonitoringDbContext db) : ITaskRepository
 {
-    private const string Select =
-        "SELECT id, project_id AS ProjectId, title, description, status, priority, " +
-        "assignee_id AS AssigneeId, due_date AS DueDate, completed_at AS CompletedAt, " +
-        "created_at AS CreatedAt FROM tasks";
+    public async Task<IReadOnlyList<ProjectTask>> GetAllAsync(int? projectId, string? status, CancellationToken ct = default) =>
+        await db.Tasks.AsNoTracking()
+            .Where(t => projectId == null || t.ProjectId == projectId)
+            .Where(t => status == null || t.Status == status)
+            .OrderBy(t => t.Id)
+            .ToListAsync(ct);
 
-    public async Task<IReadOnlyList<ProjectTask>> GetAllAsync(int? projectId, string? status, CancellationToken ct = default)
-    {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        var sql = Select + " WHERE (@projectId IS NULL OR project_id = @projectId) AND (@status IS NULL OR status = @status) ORDER BY id";
-        return (await conn.QueryAsync<ProjectTask>(sql, new { projectId, status })).AsList();
-    }
-
-    public async Task<ProjectTask?> GetByIdAsync(int id, CancellationToken ct = default)
-    {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.QuerySingleOrDefaultAsync<ProjectTask>(Select + " WHERE id = @id", new { id });
-    }
+    public async Task<ProjectTask?> GetByIdAsync(int id, CancellationToken ct = default) =>
+        await db.Tasks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id, ct);
 
     public async Task<int> CreateAsync(CreateTaskRequest req, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.ExecuteScalarAsync<int>(
-            "INSERT INTO tasks (project_id, title, description, priority, assignee_id, due_date) " +
-            "VALUES (@ProjectId, @Title, @Description, @Priority, @AssigneeId, @DueDate) RETURNING id",
-            req);
+        var task = new ProjectTask
+        {
+            ProjectId = req.ProjectId,
+            Title = req.Title,
+            Description = req.Description,
+            Priority = req.Priority,
+            AssigneeId = req.AssigneeId,
+            DueDate = req.DueDate,
+        };
+        db.Tasks.Add(task);
+        await db.SaveChangesAsync(ct);
+        return task.Id;
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateTaskRequest req, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        var n = await conn.ExecuteAsync(
-            "UPDATE tasks SET title = @Title, description = @Description, status = @Status, " +
-            "priority = @Priority, assignee_id = @AssigneeId, due_date = @DueDate, " +
-            "completed_at = CASE WHEN @Status = 'done' AND completed_at IS NULL THEN now() " +
-            "WHEN @Status <> 'done' THEN NULL ELSE completed_at END WHERE id = @id",
-            new { id, req.Title, req.Description, req.Status, req.Priority, req.AssigneeId, req.DueDate });
-        return n > 0;
+        var task = await db.Tasks.FindAsync([id], ct);
+        if (task is null) return false;
+        task.Title = req.Title;
+        task.Description = req.Description;
+        task.Priority = req.Priority;
+        task.AssigneeId = req.AssigneeId;
+        task.DueDate = req.DueDate;
+        if (req.Status == "done" && task.Status != "done")
+            task.CompletedAt = DateTime.UtcNow;
+        else if (req.Status != "done")
+            task.CompletedAt = null;
+        task.Status = req.Status;
+        return await db.SaveChangesAsync(ct) > 0;
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        return await conn.ExecuteAsync("DELETE FROM tasks WHERE id = @id", new { id }) > 0;
+        var task = await db.Tasks.FindAsync([id], ct);
+        if (task is null) return false;
+        db.Tasks.Remove(task);
+        return await db.SaveChangesAsync(ct) > 0;
     }
 }
 
-public sealed class ReportRepository(NpgsqlDataSource db) : IReportRepository
+public sealed class ReportRepository(MonitoringDbContext db) : IReportRepository
 {
     public async Task<IReadOnlyList<DepartmentProgressReport>> GetDepartmentProgressAsync(CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        var sql = """
-            SELECT u.department AS Department,
-                   COUNT(t.id)                                                          AS TotalTasks,
-                   COUNT(t.id) FILTER (WHERE t.status = 'done')                         AS DoneTasks,
-                   COUNT(t.id) FILTER (WHERE t.status = 'in_progress')                  AS InProgressTasks,
-                   COUNT(t.id) FILTER (WHERE t.status = 'blocked')                      AS BlockedTasks,
-                   ROUND(100.0 * COUNT(t.id) FILTER (WHERE t.status = 'done')
-                         / NULLIF(COUNT(t.id), 0), 2)                                   AS ProgressPercent
-            FROM users u
-            JOIN tasks t ON t.assignee_id = u.id
-            GROUP BY u.department
-            ORDER BY u.department
-            """;
-        return (await conn.QueryAsync<DepartmentProgressReport>(sql)).AsList();
+        var rows = await db.Users
+            .Join(db.Tasks, u => u.Id, t => t.AssigneeId, (u, t) => new { u.Department, t.Status })
+            .GroupBy(x => x.Department)
+            .Select(g => new
+            {
+                Department = g.Key,
+                TotalTasks = g.LongCount(),
+                DoneTasks = g.LongCount(x => x.Status == "done"),
+                InProgressTasks = g.LongCount(x => x.Status == "in_progress"),
+                BlockedTasks = g.LongCount(x => x.Status == "blocked"),
+            })
+            .OrderBy(r => r.Department)
+            .ToListAsync(ct);
+
+        return rows.Select(r => new DepartmentProgressReport(
+            r.Department,
+            r.TotalTasks,
+            r.DoneTasks,
+            r.InProgressTasks,
+            r.BlockedTasks,
+            Math.Round(100m * r.DoneTasks / r.TotalTasks, 2))).ToList();
     }
 
     public async Task<IReadOnlyList<ProjectSummaryReport>> GetProjectSummaryAsync(CancellationToken ct = default)
     {
-        await using var conn = await db.OpenConnectionAsync(ct);
-        var sql = """
-            SELECT p.id              AS ProjectId,
-                   p.name            AS ProjectName,
-                   p.status          AS Status,
-                   u.full_name       AS OwnerName,
-                   u.department      AS Department,
-                   COUNT(t.id)                                                  AS TotalTasks,
-                   COUNT(t.id) FILTER (WHERE t.status = 'done')                 AS DoneTasks,
-                   ROUND(100.0 * COUNT(t.id) FILTER (WHERE t.status = 'done')
-                         / NULLIF(COUNT(t.id), 0), 2)                           AS ProgressPercent,
-                   MIN(t.due_date) FILTER (WHERE t.status <> 'done')            AS NearestDueDate
-            FROM projects p
-            JOIN users u      ON u.id = p.owner_id
-            LEFT JOIN tasks t ON t.project_id = p.id
-            GROUP BY p.id, p.name, p.status, u.full_name, u.department
-            ORDER BY p.id
-            """;
-        return (await conn.QueryAsync<ProjectSummaryReport>(sql)).AsList();
+        var rows = await db.Projects
+            .Join(db.Users, p => p.OwnerId, u => u.Id, (p, u) => new { p, u })
+            .GroupJoin(db.Tasks, x => x.p.Id, t => t.ProjectId, (x, ts) => new { x.p, x.u, ts })
+            .Select(x => new
+            {
+                x.p.Id,
+                x.p.Name,
+                x.p.Status,
+                OwnerName = x.u.FullName,
+                x.u.Department,
+                TotalTasks = x.ts.LongCount(),
+                DoneTasks = x.ts.LongCount(t => t.Status == "done"),
+                NearestDueDate = x.ts.Where(t => t.Status != "done").Min(t => t.DueDate),
+            })
+            .OrderBy(r => r.Id)
+            .ToListAsync(ct);
+
+        return rows.Select(r => new ProjectSummaryReport(
+            r.Id,
+            r.Name,
+            r.Status,
+            r.OwnerName,
+            r.Department,
+            r.TotalTasks,
+            r.DoneTasks,
+            r.TotalTasks == 0 ? null : Math.Round(100m * r.DoneTasks / r.TotalTasks, 2),
+            r.NearestDueDate?.ToDateTime(TimeOnly.MinValue))).ToList();
     }
 }
