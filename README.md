@@ -37,7 +37,7 @@ docker compose up --build -d    # แก้โค้ดแล้วอยาก�
 
 ## Scripts เสริม
 
-ในโฟลเดอร์ `scripts/` มี script สำหรับดูแลระบบ ใช้ผ่าน bash:
+ในโฟลเดอร์ `scripts/` มี script สำหรับดูแลระบบ มี 2 เวอร์ชัน: `.sh` สำหรับ Linux/Git Bash และ `.ps1` สำหรับ PowerShell บน Windows:
 
 ```bash
 bash scripts/backup.sh          # สำรอง DB เป็นไฟล์ .sql.gz ลงโฟลเดอร์ backups/ (เก็บ 14 ไฟล์ล่าสุด)
@@ -45,5 +45,7 @@ bash scripts/healthcheck.sh     # เช็คสถานะ container + ยิ
 bash scripts/resource-stats.sh  # ดู CPU/Memory ที่ stack ใช้
 bash scripts/log-rotate.sh      # บีบอัดไฟล์ log ที่ใหญ่กว่า 1MB และลบของเก่ากว่า 7 วัน
 ```
+
+บน Windows ใช้ชื่อเดียวกันนามสกุล `.ps1` เช่น `./scripts/healthcheck.ps1`
 
 ถ้าอยากให้ backup อัตโนมัติทุกวัน ตั้ง cron ได้ เช่น `0 2 * * * /path/to/scripts/backup.sh`
